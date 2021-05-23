@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+
+  <title>DB Experement</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.4/chartist.min.css" integrity="sha512-V0+DPzYyLzIiMiWCg3nNdY+NyIiK9bED/T1xNBj08CaIUyK3sXRpB26OUCIzujMevxY9TRJFHQIxTwgzb0jVLg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chartist-plugin-tooltips-updated@0.1.4/dist/chartist-plugin-tooltip.css">
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px 100px;
+    }
+    h2 {
+      padding-top: 50px;
+    }
+    .ct-label {
+      color: black;
+      font-size: 0.9em;
+    }
+    .ct-legend {
+      position: relative;
+      display: flex;
+      padding: 20px 65px;
+    }
+
+    .ct-legend li {
+      margin-right: 40px;
+    }
+
+    .ct-legend li:before {
+      width: 12px;
+      height: 12px;
+      position: absolute;
+      left: 0;
+      content: '';
+      border: 3px solid transparent;
+      border-radius: 2px;
+    }
+
+    .ct-legend li.inactive:before {
+      background: transparent;
+    }
+
+    .ct-legend.ct-legend-inside {
+      position: absolute;
+      top: 0;
+      right: 0;
+    }
+
+    .ser1 {
+      color: red;
+      stroke: red;
+    }
+    .ser2 {
+      color: blue;
+      stroke: blue;
+    }
+  </style>
+</head>
+
+<body>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartist/0.11.4/chartist.min.js" integrity="sha512-9rxMbTkN9JcgG5euudGbdIbhFZ7KGyAuVomdQDI9qXfPply9BJh0iqA7E/moLCatH2JD4xBGHwV6ezBkCpnjRQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chartist-plugin-legend/0.6.2/chartist-plugin-legend.min.js" integrity="sha512-J82gmCXFu+eMIvhK2cCa5dIiKYfjFY4AySzCCjG4EcnglcPQTST/nEtaf5X6egYs9vbbXpttR7W+wY3Uiy37UQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartist-plugin-tooltips-updated@0.1.4/dist/chartist-plugin-tooltip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartist-plugin-axistitle@0.0.7/dist/chartist-plugin-axistitle.min.js"></script>
+
+  <script>
+    String.prototype.hashCode = function() {
+      var hash = 0, i, chr;
+      if (this.length === 0) return hash;
+      for (i = 0; i < this.length; i++) {
+        chr   = this.charCodeAt(i);
+        hash  = ((hash << 5) - hash) + chr;
+        hash |= 0; // Convert to 32bit integer
+      }
+      return 'h' + hash;
+    };
+
+    var charts = {};
+      
+    // Create a new line chart object where as first parameter we pass in a selector
+    // that is resolving to our chart container element. The Second parameter
+    // is the actual data object.
+    
+
+    var sock = new WebSocket('ws://' + window.location.hostname + ':8889/ws'); // The '81' here is the Port where the WebSocket server will communicate with
+//    websocket.onopen = function(evt) { onOpen(evt) };
+//    websocket.onclose = function(evt) { onClose(evt) };
+//    websocket.onerror = function(evt) { onError(evt) };
+    sock.onmessage = function(m) {
+      var msg = JSON.parse(m.data);
+      if (msg.type === 'add_data') {
+
+        if (!charts[msg.chartName]) {
+          const title = document.createElement("h2");
+          title.innerText = msg.chartName;
+          document.body.appendChild(title);
+
+          const chartDiv = document.createElement("div");
+          chartDiv.id = msg.chartName.hashCode();
+          chartDiv.className = 'ct-chart';
+          document.body.appendChild(chartDiv);
+
+          var chartOptions = {
+            height: '300px',
+            showPoint: true,
+            lineSmooth: true,
+            chartPadding: {
+              top: 20,
+              right: 30,
+              left: 30,
+              bottom: 50,
+            },
+            axisX: {
+              onlyInteger: true,
+              // divisor: 4,
+              labelInterpolationFnc: function(value, index) {
+                console.log(11, value, value % 1000 === 0);
+                return value % 1000 === 0 ? `${(value / 1000)}k` : value;
+              }
+            },
+            axisY: {
+              labelInterpolationFnc: function(value, index) {
+                return Math.round(value * 1000) / 1000;
+              }
+            },
+            
+            plugins: [
+              Chartist.plugins.tooltip({
+                transformTooltipTextFnc: function(tooltip) {
+                  return (Math.round(tooltip * 1e3) / 1e3) + ' ms';
+                }
+              }),
+              Chartist.plugins.legend({
+                classNames: ['ser1', 'ser2']
+              }),
+              Chartist.plugins.ctAxisTitle({
+                 axisY: {
+                  axisTitle: "Query time, ms",
+                  axisClass: "ct-axis-title",
+                  offset: {
+                    x: 0,
+                    y: -1
+                  },
+                  flipTitle: false
+                },
+                axisX: {
+                  axisTitle: 'Table rows count',
+                  axisClass: 'ct-axis-title',
+                  offset: {
+                    x: 0,
+                    y: 50
+                  },
+                  textAnchor: 'middle'
+                },
+              }),
+            ]
+          };
+          const initalData = {
+            // Our series array that contains series objects or in this case series data arrays
+            series: [
+              {
+                name: 'Select time',
+                data: [],
+                className: 'ser1',
+              }, {
+                name: 'Insert time',
+                data: [],
+                className: 'ser2',
+              },
+            ],
+            
+          };
+          charts[msg.chartName] = {
+            instance: new Chartist.Line('#' + msg.chartName.hashCode(), initalData, chartOptions),
+            data: initalData,
+          };
+        }
+
+        charts[msg.chartName].data.labels.push(msg.dataPoint.count);
+        charts[msg.chartName].data.series[0].data.push(msg.dataPoint.select_time);
+        charts[msg.chartName].data.series[1].data.push(msg.dataPoint.insert_time);
+        charts[msg.chartName].instance.update();
+        /* setTimeout(() => {
+          document.querySelectorAll('.ct-label.ct-horizontal').forEach((e) => {
+            if (e.innerText.endsWith('000')) {
+              e.innerText = ((+e.innerText) / 1000) + 'k'
+            }
+          })
+        })
+*/
+      }
+      
+    }
+</script>
+</body>
+</html>
