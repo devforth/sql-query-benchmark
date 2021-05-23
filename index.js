@@ -26,6 +26,17 @@ const SHORT_NAME_FIELD_LENGTH = 1;
 const TABLE_NAME = 'names';
 const RAND_SEED = 'BASE';
 
+// initialize database connector
+const { Pool } = pg;
+const pool = new Pool({
+  user: 'resercher',
+  host: 'localhost',
+  database: 'testdb',
+  password: 'passw1',
+  port: 5433,
+});
+
+
 const app = express();
 app.get('/', async (req, res) => {
   res.sendFile(path.join(__dirname, '/index.html'));
@@ -67,15 +78,7 @@ server.listen(8889, '127.0.0.1', async () => {
 });
 
 
-// initialize database connector
-const { Pool } = pg;
-const pool = new Pool({
-  user: 'myuser',
-  host: 'localhost',
-  database: 'testdb',
-  password: 'passw1',
-  port: 5446,
-});
+
 
 const connections = [];
 
