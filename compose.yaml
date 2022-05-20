@@ -1,0 +1,16 @@
+version: '3.2'
+
+services:  
+  database:
+    image: postgres:14.0
+    restart: always
+    environment:
+      - POSTGRES_USER=t1
+      - POSTGRES_PASSWORD=t1
+      - POSTGRES_DB=t1
+    ports:
+      - "54345:5432"
+    logging:
+      options:
+        max-size: 10m
+        max-file: "3"

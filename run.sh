@@ -1,1 +1,1 @@
-sudo service postgresql start && node index.js
+docker-compose -f compose.yaml up -d && node index.js

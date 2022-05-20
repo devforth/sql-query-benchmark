@@ -29,11 +29,11 @@ const RAND_SEED = 'BASE';
 // initialize database connector
 const { Pool } = pg;
 const pool = new Pool({
-  user: 'researcher',
+  user: 't1',
   host: 'localhost',
-  database: 'testdb',
-  password: 'passw1',
-  port: 5432,
+  database: 't1',
+  password: 't1',
+  port: 54345,
 });
 
 
